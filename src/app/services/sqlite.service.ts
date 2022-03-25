@@ -16,12 +16,21 @@ export class SqliteService {
     this.connection = new SQLiteConnection(CapacitorSQLite);
     console.log('Connection is', this.connection);
 
-    const echoResult = await CapacitorSQLite.echo({ value: 'hello world' });
-    console.log('ECHO RESULT', echoResult);
+    try {
+      const echoResult = await CapacitorSQLite.echo({ value: 'hello world' });
+      console.log('ECHO RESULT', echoResult);
+    } catch (err) {
+      console.error('SQLite "echo" failed', err);
+    }
 
-    console.log('checking IS VALID');
-    const isValid = await CapacitorSQLite.isJsonValid({ jsonstring: productSchemaJson });
-    console.log('result', isValid);
+    try {
+      console.log('checking IS VALID');
+      const isValid = await CapacitorSQLite.isJsonValid({ jsonstring: productSchemaJson });
+      console.log('result', isValid);
+    } catch (err) {
+      console.error('SQLite "isJsonValid" failed', err);
+    }
+
   }
 
   getConnection(): SQLiteConnection {
