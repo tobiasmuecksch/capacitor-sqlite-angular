@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { Platform } from '@ionic/angular';
 import { SqliteService } from './services/sqlite.service';
 
@@ -8,6 +9,9 @@ import { SqliteService } from './services/sqlite.service';
   styleUrls: ['app.component.scss'],
 })
 export class AppComponent {
+
+  isWeb: boolean = Capacitor.getPlatform() === 'web';
+
   constructor(
     private readonly sqlite: SqliteService,
     private readonly platform: Platform

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { Capacitor } from '@capacitor/core';
 import { productSchemaJson } from '../sqldata/product.sql';
 
 @Injectable({
@@ -12,10 +13,31 @@ export class SqliteService {
   constructor() { }
 
   async init() {
-    console.log('Creating Connection');
+    console.log('Creating Connection', `Platform is: ${Capacitor.getPlatform()}`);
     this.connection = new SQLiteConnection(CapacitorSQLite);
     console.log('Connection is', this.connection);
 
+    if (Capacitor.getPlatform() === 'web') {
+
+      await customElements.whenDefined('jeep-sqlite');
+
+      const jeepSqliteEl = document.querySelector('jeep-sqlite');
+      if (jeepSqliteEl != null) {
+        await this.initWebStore();
+
+
+        console.log(`isStoreOpen ${await jeepSqliteEl.isStoreOpen()}`)
+        console.log(`$$ jeepSqliteEl is defined}`);
+      } else {
+        console.log('$$ jeepSqliteEl is null');
+      }
+
+      this.test();
+    }
+
+  }
+
+  async test() {
     try {
       const echoResult = await CapacitorSQLite.echo({ value: 'hello world' });
       console.log('ECHO RESULT', echoResult);
@@ -30,7 +52,11 @@ export class SqliteService {
     } catch (err) {
       console.error('SQLite "isJsonValid" failed', err);
     }
+  }
 
+  async initWebStore() {
+
+    return this.connection.initWebStore();
   }
 
   getConnection(): SQLiteConnection {
