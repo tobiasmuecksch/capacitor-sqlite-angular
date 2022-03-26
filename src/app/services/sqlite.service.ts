@@ -8,14 +8,23 @@ import { productSchemaJson } from '../sqldata/product.sql';
 })
 export class SqliteService {
 
-  connection?: SQLiteConnection;
+  serviceConnection?: SQLiteConnection;
+  dbConnection?: SQLiteDBConnection;
 
   constructor() { }
 
   async init() {
     console.log('Creating Connection', `Platform is: ${Capacitor.getPlatform()}`);
-    this.connection = new SQLiteConnection(CapacitorSQLite);
-    console.log('Connection is', this.connection);
+    // Create a connection
+    this.serviceConnection = new SQLiteConnection(CapacitorSQLite);
+    console.log('creating connection');
+    this.dbConnection = await this.serviceConnection.createConnection('products', false, 'no-encryption', 1);
+    console.log('CONNECTION IS', this.dbConnection);
+
+    // Not implemented on web??
+    //await CapacitorSQLite.open({ database: 'bico' });
+
+    console.log('Connection is', this.serviceConnection);
 
     if (Capacitor.getPlatform() === 'web') {
 
@@ -31,10 +40,26 @@ export class SqliteService {
       } else {
         console.log('$$ jeepSqliteEl is null');
       }
-
-      this.test();
     }
+  }
 
+  async initDB() {
+    await CapacitorSQLite.isJsonValid({ jsonstring: productSchemaJson });
+
+    this.serviceConnection.importFromJson(productSchemaJson);
+  }
+
+  async printAllDbs() {
+    console.log('DB LIST', await this.serviceConnection.getDatabaseList());
+  }
+
+  async printQuery() {
+    const statement = 'SELECT * FROM products;';
+    const values = [];
+
+    const result = await CapacitorSQLite.query({ statement, values, database: 'products' });
+
+    console.log('result', result);
   }
 
   async test() {
@@ -56,15 +81,15 @@ export class SqliteService {
 
   async initWebStore() {
 
-    return this.connection.initWebStore();
+    return this.serviceConnection.initWebStore();
   }
 
   getConnection(): SQLiteConnection {
-    if (!this.connection) {
+    if (!this.serviceConnection) {
       throw new Error('SQLite Verbindung steht nicht zur Verfügung.');
     }
 
-    return this.connection;
+    return this.serviceConnection;
   }
 
   async createConnection(
