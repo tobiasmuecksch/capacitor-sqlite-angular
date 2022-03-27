@@ -44,6 +44,24 @@ export class SqliteOfficialService {
     return this.sqliteConnection.echo(value);
   }
 
+  async openDB(databasename: string): Promise<SQLiteDBConnection> {
+    // connectionConsistency: mindestens eine Verbindung ist offen
+    const connectionConsistency = (await this.sqliteConnection.checkConnectionsConsistency()).result;
+    const connectionToDatabaseAlreadyOpen = (await this.sqliteConnection.isConnection(databasename)).result;
+
+    let dbConnection: SQLiteDBConnection;
+
+    if (connectionConsistency && connectionToDatabaseAlreadyOpen) {
+      dbConnection = await this.sqliteConnection.retrieveConnection(databasename);
+    } else {
+      dbConnection = await this.sqliteConnection
+        .createConnection(databasename, false, 'no-encryption', 1);
+    }
+    await dbConnection.open();
+
+    return dbConnection;
+  }
+
   async isSecretStored(): Promise<capSQLiteResult> {
     if (!this.native) {
       throw new Error(`Not implemented for ${this.platform} platform`);
