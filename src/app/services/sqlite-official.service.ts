@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
-import { CapacitorSQLite, capEchoResult, capNCDatabasePathResult, capSQLiteChanges, capSQLiteResult, capSQLiteSet, capSQLiteValues, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { CapacitorSQLite, capSQLiteSet, Changes, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { Capacitor } from '@capacitor/core';
+import { Platform } from '@ionic/angular';
+import { BehaviorSubject } from 'rxjs';
+import { filter, take } from 'rxjs/operators';
+import { SQLConnectionNotReadyError } from './errors/connection-not-ready-error';
 
 @Injectable({
   providedIn: 'root'
@@ -10,10 +14,13 @@ export class SqliteOfficialService {
   native: boolean = this.isNative();
   sqliteConnection: SQLiteConnection = new SQLiteConnection(CapacitorSQLite);;
   platform = Capacitor.getPlatform();
+  private ready$ = new BehaviorSubject<boolean>(false);
 
-  constructor() {
+  constructor(private platformService: Platform) {
     if (this.platform === 'web') {
       this.initWeb();
+    } else {
+      this.ready$.next(true);
     }
   }
 
@@ -21,12 +28,14 @@ export class SqliteOfficialService {
  * Does some stuff, which is necessary for the web platform
  */
   async initWeb() {
+    await this.platformService.ready();
     await customElements.whenDefined('jeep-sqlite');
 
     const jeepSqliteEl = document.querySelector('jeep-sqlite');
 
     if (jeepSqliteEl !== null) {
       await this.sqliteConnection.initWebStore();
+      this.ready$.next(true);
     } else {
       console.error('Cannot init web. Cannot find "jeepSqliteEl" element in dom.');
     }
@@ -40,11 +49,16 @@ export class SqliteOfficialService {
    * Echo a value
    * @param value 
    */
-  async echo(value: string): Promise<capEchoResult> {
-    return this.sqliteConnection.echo(value);
+  async echo(value: string): Promise<string> {
+    await this.ready('echo');
+    const result = await this.sqliteConnection.echo(value);
+
+    return result.value;
   }
 
-  async openDB(databasename: string): Promise<SQLiteDBConnection> {
+  async openDB(databasename: string, version: number = 1): Promise<SQLiteDBConnection> {
+    await this.ready('openDB');
+
     // connectionConsistency: mindestens eine Verbindung ist offen
     const connectionConsistency = (await this.sqliteConnection.checkConnectionsConsistency()).result;
     const connectionToDatabaseAlreadyOpen = (await this.sqliteConnection.isConnection(databasename)).result;
@@ -55,22 +69,28 @@ export class SqliteOfficialService {
       dbConnection = await this.sqliteConnection.retrieveConnection(databasename);
     } else {
       dbConnection = await this.sqliteConnection
-        .createConnection(databasename, false, 'no-encryption', 1);
+        .createConnection(databasename, false, 'no-encryption', version);
     }
     await dbConnection.open();
 
     return dbConnection;
   }
 
-  async isSecretStored(): Promise<capSQLiteResult> {
+  async isSecretStored(): Promise<boolean> {
     if (!this.native) {
       throw new Error(`Not implemented for ${this.platform} platform`);
     }
 
-    return this.sqliteConnection.isSecretStored();
+    await this.ready('isSecretStored');
+
+    const result = await this.sqliteConnection.isSecretStored();
+
+    return result.result;
   }
 
   async setEncryptionSecret(passphrase: string): Promise<void> {
+    await this.ready('isSecretStored');
+
     return this.sqliteConnection.setEncryptionSecret(passphrase);
   }
 
@@ -78,6 +98,8 @@ export class SqliteOfficialService {
     if (!this.native) {
       return Promise.reject(new Error(`Not implemented for ${this.platform} platform`));
     }
+
+    await this.ready('changeEncryptionSecret');
 
     return this.sqliteConnection.changeEncryptionSecret(passphrase, oldpassphrase);
   }
@@ -98,6 +120,7 @@ export class SqliteOfficialService {
     set?: capSQLiteSet[]
   )
     : Promise<void> {
+    await this.ready('addUpgradeStatement');
     return this.sqliteConnection.addUpgradeStatement(database, fromVersion, toVersion, statement, set ? set : []);
   }
 
@@ -108,8 +131,11 @@ export class SqliteOfficialService {
    * @returns Promise<capNCDatabasePathResult>
    * @since 3.3.3-1
    */
-  async getNCDatabasePath(folderPath: string, database: string): Promise<capNCDatabasePathResult> {
-    return this.sqliteConnection.getNCDatabasePath(folderPath, database);
+  async getNCDatabasePath(folderPath: string, database: string): Promise<string | undefined> {
+    await this.ready('getNCDatabasePath');
+    const result = await this.sqliteConnection.getNCDatabasePath(folderPath, database);
+
+    return result.path;
   }
   /**
    * Create a non-conformed database connection
@@ -119,6 +145,7 @@ export class SqliteOfficialService {
    * @since 3.3.3-1
    */
   async createNCConnection(databasePath: string, version: number): Promise<SQLiteDBConnection> {
+    await this.ready('createNCConnection');
     const db: SQLiteDBConnection = await this.sqliteConnection.createNCConnection(databasePath, version);
     if (db !== null) {
       return db;
@@ -133,17 +160,21 @@ export class SqliteOfficialService {
    * @since 3.3.3-1
    */
   async closeNCConnection(databasePath: string): Promise<void> {
+    await this.ready('closeNCConnection');
     return this.sqliteConnection.closeNCConnection(databasePath);
   }
 
   /**
    * Check if a non-conformed databaseconnection exists
    * @param databasePath
-   * @returns Promise<capSQLiteResult>
+   * @returns Promise<boolean>
    * @since 3.3.3-1
    */
-  async isNCConnection(databasePath: string): Promise<capSQLiteResult> {
-    return this.sqliteConnection.isNCConnection(databasePath);
+  async isNCConnection(databasePath: string): Promise<boolean> {
+    await this.ready('retrieveNCConnection');
+    const result = await this.sqliteConnection.isNCConnection(databasePath);
+
+    return result.result;
   }
 
   /**
@@ -153,17 +184,21 @@ export class SqliteOfficialService {
    * @since 3.3.3-1
    */
   async retrieveNCConnection(databasePath: string): Promise<SQLiteDBConnection> {
+    await this.ready('retrieveNCConnection');
     return this.sqliteConnection.retrieveNCConnection(databasePath);
   }
 
   /**
    * Check if a non conformed database exists
    * @param databasePath
-   * @returns Promise<capSQLiteResult>
+   * @returns Promise<boolean>
    * @since 3.3.3-1
    */
-  async isNCDatabase(databasePath: string): Promise<capSQLiteResult> {
-    return this.sqliteConnection.isNCDatabase(databasePath);
+  async isNCDatabase(databasePath: string): Promise<boolean> {
+    await this.ready('isNCDatabase');
+    const result = await this.sqliteConnection.isNCDatabase(databasePath);
+
+    return result.result;
   }
 
   /**
@@ -176,6 +211,7 @@ export class SqliteOfficialService {
   async createConnection(database: string, encrypted: boolean,
     mode: string, version: number
   ): Promise<SQLiteDBConnection> {
+    await this.ready('createConnection');
     const db: SQLiteDBConnection = await this.sqliteConnection.createConnection(database, encrypted, mode, version);
 
     if (db != null) {
@@ -190,6 +226,7 @@ export class SqliteOfficialService {
    * @param database 
    */
   async closeConnection(database: string): Promise<void> {
+    await this.ready('closeConnection');
     return this.sqliteConnection.closeConnection(database);
   }
   /**
@@ -198,6 +235,7 @@ export class SqliteOfficialService {
    * @param database 
    */
   async retrieveConnection(database: string): Promise<SQLiteDBConnection> {
+    await this.ready('retrieveConnection');
     return this.sqliteConnection.retrieveConnection(database);
   }
 
@@ -205,6 +243,7 @@ export class SqliteOfficialService {
    * Retrieve all existing connections
    */
   async retrieveAllConnections(): Promise<Map<string, SQLiteDBConnection>> {
+    await this.ready('retrieveAllConnections');
     const myConns = await this.sqliteConnection.retrieveAllConnections();
     /*                let keys = [...myConns.keys()];
                     keys.forEach( (value) => {
@@ -218,6 +257,7 @@ export class SqliteOfficialService {
    * Close all existing connections
    */
   async closeAllConnections(): Promise<void> {
+    await this.ready('closeAllConnections');
     return this.sqliteConnection.closeAllConnections();
   }
 
@@ -225,41 +265,55 @@ export class SqliteOfficialService {
    * Check if connection exists
    * @param database 
    */
-  async isConnection(database: string): Promise<capSQLiteResult> {
-    return this.sqliteConnection.isConnection(database);
+  async isConnection(database: string): Promise<boolean> {
+    await this.ready('isConnection');
+    const result = await this.sqliteConnection.isConnection(database);
+
+    return result.result;
   }
 
   /**
    * Check Connections Consistency
    * @returns 
    */
-  async checkConnectionsConsistency(): Promise<capSQLiteResult> {
-    return this.sqliteConnection.checkConnectionsConsistency();
+  async checkConnectionsConsistency(): Promise<boolean> {
+    await this.ready('checkConnectionsConsistency');
+    const result = await this.sqliteConnection.checkConnectionsConsistency();
+
+    return result.result;
   }
 
   /**
    * Check if database exists
    * @param database 
    */
-  async isDatabase(database: string): Promise<capSQLiteResult> {
-    return this.sqliteConnection.isDatabase(database);
+  async databaseExists(database: string): Promise<boolean> {
+    await this.ready('isDatabase');
+    const result = await this.sqliteConnection.isDatabase(database);
+    return result.result;
   }
   /**
    * Get the list of databases
    */
-  async getDatabaseList(): Promise<capSQLiteValues> {
-    return this.sqliteConnection.getDatabaseList();
+  async getDatabaseList(): Promise<string[]> {
+    await this.ready('getDatabaseList');
+    const result = await this.sqliteConnection.getDatabaseList();
+
+    return result.values;
   }
   /**
    * Get Migratable databases List
    */
-  async getMigratableDbList(folderPath: string): Promise<capSQLiteValues> {
+  async getMigratableDbList(folderPath: string): Promise<any[]> {
     this.ensureNative();
+    await this.ready('getMigratableDbList');
 
     if (!folderPath || folderPath.length === 0) {
       throw (new Error(`You must provide a folder path`));
     }
-    return this.sqliteConnection.getMigratableDbList(folderPath);
+    const result = await this.sqliteConnection.getMigratableDbList(folderPath);
+
+    return result.values;
   }
 
   /**
@@ -267,6 +321,7 @@ export class SqliteOfficialService {
    */
   async addSQLiteSuffix(folderPath?: string, dbNameList?: string[]): Promise<void> {
     this.ensureNative();
+    await this.ready('addSQLiteSuffix');
 
     const path: string = folderPath ? folderPath : "default";
     const dbList: string[] = dbNameList ? dbNameList : [];
@@ -278,6 +333,7 @@ export class SqliteOfficialService {
    */
   async deleteOldDatabases(folderPath?: string, dbNameList?: string[]): Promise<void> {
     this.ensureNative();
+    await this.ready('deleteOldDatabases');
 
     const path: string = folderPath ? folderPath : "default";
     const dbList: string[] = dbNameList ? dbNameList : [];
@@ -288,8 +344,11 @@ export class SqliteOfficialService {
    * Import from a Json Object
    * @param jsonstring 
    */
-  async importFromJson(jsonstring: string): Promise<capSQLiteChanges> {
-    return this.sqliteConnection.importFromJson(jsonstring);
+  async importFromJson(jsonstring: string): Promise<Changes> {
+    await this.ready('importFromJson');
+    const result = await this.sqliteConnection.importFromJson(jsonstring);
+
+    return result.changes;
   }
 
   /**
@@ -297,8 +356,11 @@ export class SqliteOfficialService {
    * @param jsonstring Check the validity of a given Json Object
    */
 
-  async isJsonValid(jsonstring: string): Promise<capSQLiteResult> {
-    return this.sqliteConnection.isJsonValid(jsonstring);
+  async isJsonValid(jsonstring: string): Promise<boolean> {
+    await this.ready('isJsonValid');
+    const result = await this.sqliteConnection.isJsonValid(jsonstring);
+
+    return result.result;
   }
 
   /**
@@ -339,5 +401,25 @@ export class SqliteOfficialService {
     if (!this.native) {
       throw new Error(`Not implemented for ${this.platform} platform`);
     }
+  }
+
+  private ready(methodname: string, waitMs: number = 1000): Promise<void> {
+    return new Promise((resolve) => {
+      let success: boolean = false;
+
+      setTimeout(() => {
+        if (!success) {
+          throw new SQLConnectionNotReadyError(methodname);
+        }
+      }, waitMs);
+
+      this.ready$.pipe(filter(isReady => !!isReady), take(1))
+        .subscribe(() => {
+          if (!success) {
+            success = true;
+            resolve();
+          }
+        });
+    });
   }
 }
