@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-root',
@@ -6,5 +7,9 @@ import { Component } from '@angular/core';
   styleUrls: ['app.component.scss'],
 })
 export class AppComponent {
+
+  // NICHT LÖSCHEN!!!!
+  enableJeepSQL: boolean = Capacitor.getPlatform() === 'web';
+
   constructor() { }
 }

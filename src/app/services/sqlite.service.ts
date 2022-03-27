@@ -3,6 +3,8 @@ import { CapacitorSQLite } from '@capacitor-community/sqlite';
 import { productSchemaJson } from '../sqldata/product.sql';
 import { SqliteOfficialService } from './sqlite-official.service';
 
+const DB_VERSION = 5;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -10,36 +12,62 @@ export class SqliteService {
 
   constructor(
     private sqlite: SqliteOfficialService
-  ) { }
+  ) {
+    this.initProductsDatabase();
+  }
 
-  async initDB() {
+  async initProductsDatabase() {
     try {
-      const result = (await CapacitorSQLite.isJsonValid({ jsonstring: productSchemaJson })).result;
+      // Only import the database, if it doesn't exist already
+      const dbExists = await this.sqlite.databaseExists('product-db');
 
-      if (result) {
-        const ret = await this.sqlite.importFromJson(productSchemaJson);
-        if (ret.changes.changes === -1) {
-          console.log(`initDB: import Json Object failed`);
-        }
-      } else {
-        console.log(`initDB: Json Object not valid`);
+      if (dbExists) {
+        //await this.upgradeDb();
+        return;
+      }
+
+      // Check if json is Valid
+      const jsonIsValid = await this.sqlite.isJsonValid(productSchemaJson);
+
+      if (jsonIsValid) {
+        await this.sqlite.importFromJson(productSchemaJson);
       }
     } catch (err) {
-      console.log(`initDB: ${err}`);
+      console.error(`initDB: ${err}`);
     }
   }
 
   async printAllDbs() {
     console.log('DB LIST', (await this.sqlite.getDatabaseList()).values);
+    const dbConnection = await this.sqlite.openDB('product-db', DB_VERSION);
+    const x = await dbConnection.query(`
+      SELECT 
+          name
+      FROM 
+          sqlite_schema
+      WHERE 
+          type ='table' AND 
+          name NOT LIKE 'sqlite_%';
+    `);
+
+    console.log('TABLE LIST', x);
   }
 
   async printQuery() {
-    const dbConnection = await this.sqlite.openDB('product-db');
+    const dbConnection = await this.sqlite.openDB('product-db', DB_VERSION);
 
     const statement = 'SELECT * FROM products;';
     const values = [];
     const result = await dbConnection.query(statement, values);
     console.log('result', result.values);
+  }
+
+  async printExport() {
+    const dbConnection = await this.sqlite.openDB('product-db', DB_VERSION);
+
+    const json = await dbConnection.exportToJson('full');
+
+    console.log('JSON', json);
   }
 
   async test() {
@@ -57,6 +85,12 @@ export class SqliteService {
     } catch (err) {
       console.error('SQLite "isJsonValid" failed', err);
     }
+  }
+
+  async upgradeDb() {
+    console.log('adding upgrade statement');
+    const statement = `ALTER TABLE products ADD status TEXT DEFAULT "available"`;
+    await this.sqlite.addUpgradeStatement('product-db', 4, 5, statement);
   }
 }
 

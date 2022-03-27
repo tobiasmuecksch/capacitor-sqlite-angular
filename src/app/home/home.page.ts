@@ -14,7 +14,7 @@ export class HomePage {
 
   initDB() {
     console.log('INIT', this.sqlite);
-    this.sqlite.initDB();
+    this.sqlite.initProductsDatabase();
   }
 
   printDbList() {
@@ -23,5 +23,12 @@ export class HomePage {
 
   printQuery() {
     this.sqlite.printQuery();
+  }
+
+  export() {
+    this.sqlite.printExport();
+  }
+  printAllDbs() {
+    this.sqlite.printAllDbs();
   }
 }
