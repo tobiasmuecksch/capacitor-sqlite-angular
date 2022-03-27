@@ -13,27 +13,31 @@ export class SqliteService {
 
   constructor() { }
 
-
   async init() {
-    console.log('Creating Connection', `Platform is: ${Capacitor.getPlatform()}`);
     // Create a connection
     this.serviceConnection = new SQLiteConnection(CapacitorSQLite);
 
-    console.log('Connection is', this.serviceConnection);
-
+    // Do web related init stuff
     if (Capacitor.getPlatform() === 'web') {
-      await customElements.whenDefined('jeep-sqlite');
-
-      const jeepSqliteEl = document.querySelector('jeep-sqlite');
-      if (jeepSqliteEl != null) {
-        await this.initWebStore();
-        console.log(`isStoreOpen ${await jeepSqliteEl.isStoreOpen()}`);
-        console.log(`$$ jeepSqliteEl is defined`);
-      } else {
-        console.log('$$ jeepSqliteEl is null');
-      }
+      this.initWeb();
     }
   }
+
+  /**
+   * Does some stuff, which is necessary for the web platform
+   */
+  async initWeb() {
+    await customElements.whenDefined('jeep-sqlite');
+
+    const jeepSqliteEl = document.querySelector('jeep-sqlite');
+
+    if (jeepSqliteEl !== null) {
+      await this.serviceConnection.initWebStore();
+    } else {
+      console.error('Cannot init web. Cannot find "jeepSqliteEl" element in dom.');
+    }
+  }
+
   async initDB() {
     try {
       const result = (await CapacitorSQLite.isJsonValid({ jsonstring: productSchemaJson })).result;
@@ -49,15 +53,18 @@ export class SqliteService {
       console.log(`initDB: ${err}`);
     }
   }
-  async openDB(): Promise<boolean> {
+
+  async openDB(databasename: string): Promise<boolean> {
     try {
-      const retCC = (await this.serviceConnection.checkConnectionsConsistency()).result;
-      const isConn = (await this.serviceConnection.isConnection('product-db')).result;
-      if (retCC && isConn) {
-        this.dbConnection = await this.serviceConnection.retrieveConnection('product-db');
+      // connectionConsistency: mindestens eine Verbindung ist offen
+      const connectionConsistency = (await this.serviceConnection.checkConnectionsConsistency()).result;
+      const connectionToDatabaseAlreadyOpen = (await this.serviceConnection.isConnection(databasename)).result;
+
+      if (connectionConsistency && connectionToDatabaseAlreadyOpen) {
+        this.dbConnection = await this.serviceConnection.retrieveConnection(databasename);
       } else {
         this.dbConnection = await this.serviceConnection
-          .createConnection('product-db', false, 'no-encryption', 1);
+          .createConnection(databasename, false, 'no-encryption', 1);
       }
       await this.dbConnection.open();
       return true;
@@ -74,7 +81,7 @@ export class SqliteService {
 
   async printQuery() {
     try {
-      const isOpen = await this.openDB();
+      const isOpen = await this.openDB('product-db');
       if (isOpen) {
         const statement = 'SELECT * FROM products;';
         const values = [];
@@ -105,11 +112,6 @@ export class SqliteService {
     }
   }
 
-  async initWebStore() {
-
-    return this.serviceConnection.initWebStore();
-  }
-
   getConnection(): SQLiteConnection {
     if (!this.serviceConnection) {
       throw new Error('SQLite Verbindung steht nicht zur Verfügung.');
@@ -126,8 +128,7 @@ export class SqliteService {
   ): Promise<SQLiteDBConnection> {
     const sqlite = this.getConnection();
 
-    const db: SQLiteDBConnection = await sqlite.createConnection(
-      database, encrypted, mode, version);
+    const db: SQLiteDBConnection = await sqlite.createConnection(database, encrypted, mode, version);
     if (db != null) {
       return Promise.resolve(db);
     } else {
