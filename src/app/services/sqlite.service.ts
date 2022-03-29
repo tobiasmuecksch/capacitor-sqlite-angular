@@ -22,8 +22,7 @@ export class SqliteService {
       const dbExists = await this.sqlite.databaseExists('product-db');
 
       if (dbExists) {
-        //await this.upgradeDb();
-        return;
+        console.info('The database `product-db` does already exist. Will call importFromJson anyway.');
       }
 
       // Check if json is Valid
