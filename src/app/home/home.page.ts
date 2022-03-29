@@ -28,7 +28,12 @@ export class HomePage {
   export() {
     this.sqlite.printExport();
   }
+
   printAllDbs() {
     this.sqlite.printAllDbs();
+  }
+
+  dropDatabase() {
+    this.sqlite.dropDatabase();
   }
 }

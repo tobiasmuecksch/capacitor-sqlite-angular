@@ -11,10 +11,11 @@ import { SQLConnectionNotReadyError } from './errors/connection-not-ready-error'
 })
 export class SqliteOfficialService {
 
-  native: boolean = this.isNative();
-  sqliteConnection: SQLiteConnection = new SQLiteConnection(CapacitorSQLite);;
-  platform = Capacitor.getPlatform();
   private ready$ = new BehaviorSubject<boolean>(false);
+  native: boolean = this.isNative();
+  platform = Capacitor.getPlatform();
+
+  sqliteConnection: SQLiteConnection = new SQLiteConnection(CapacitorSQLite);
 
   constructor(private platformService: Platform) {
     if (this.platform === 'web') {
@@ -395,6 +396,18 @@ export class SqliteOfficialService {
     }
 
     return this.sqliteConnection.saveToStore(database);
+  }
+
+  /**
+   * Drops a database
+   * 
+   * @param databaseName 
+   * @returns 
+   */
+  async dropDatabase(databaseName: string): Promise<void> {
+    await this.ready('deleteDatabase');
+
+    return CapacitorSQLite.deleteDatabase({ database: databaseName });
   }
 
   private ensureNative() {

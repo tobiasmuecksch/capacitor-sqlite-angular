@@ -92,6 +92,12 @@ export class SqliteService {
     const statement = `ALTER TABLE products ADD status TEXT DEFAULT "available"`;
     await this.sqlite.addUpgradeStatement('product-db', 4, 5, statement);
   }
+
+  async dropDatabase() {
+    await this.sqlite.dropDatabase('product-db');
+
+    console.log('DATABASE DROPPED');
+  }
 }
 
 
