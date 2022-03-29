@@ -1,6 +1,6 @@
-export const productSchemaObject = {
+export const productSchemaObjectV1 = {
   "database": "product-db",
-  "version": 7,
+  "version": 1,
   "encrypted": false,
   "mode": "full",
   "tables": [
@@ -26,8 +26,6 @@ export const productSchemaObject = {
         { "column": "currency", "value": "TEXT" },
         { "column": "value", "value": "INTEGER" },
         { "column": "vendorid", "value": "INTEGER" },
-        { "column": "status", "value": "TEXT" },
-        { "column": "rareness", "value": "TEXT" },
         { "column": "last_modified", "value": "INTEGER DEFAULT (strftime('%s', 'now'))" },
         {
           "foreignkey": "vendorid",
@@ -35,13 +33,13 @@ export const productSchemaObject = {
         }
       ],
       "values": [
-        [1, "Devdactic Fan Hat", "EUR", 9, 1, 'available', 'very rare', 1604396241],
-        [2, "Ionic Academy Membership", "USD", 25, 2, 'available', 'very rare', 1604296241],
-        [3, "Ionic Sticker Swag", "USD", 4, 3, 'available', 'very rare', 1594196241],
-        [4, "Practical Ionic Book", "USD", 79, 1, 'available', 'very rare', 1603396241]
+        [1, "Devdactic Fan Hat", "EUR", 9, 1, 1604396241],
+        [2, "Ionic Academy Membership", "USD", 25, 2, 1604296241],
+        [3, "Ionic Sticker Swag", "USD", 4, 3, 1594196241],
+        [4, "Practical Ionic Book", "USD", 79, 1, 1603396241]
       ]
     }
   ]
 };
 
-export const productSchemaJson: string = JSON.stringify(productSchemaObject);
+export const productSchemaJsonV1: string = JSON.stringify(productSchemaObjectV1);

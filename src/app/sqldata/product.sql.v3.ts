@@ -1,6 +1,6 @@
-export const productSchemaObject = {
+export const productSchemaObjectV3 = {
   "database": "product-db",
-  "version": 7,
+  "version": 3,
   "encrypted": false,
   "mode": "full",
   "tables": [
@@ -44,4 +44,4 @@ export const productSchemaObject = {
   ]
 };
 
-export const productSchemaJson: string = JSON.stringify(productSchemaObject);
+export const productSchemaJsonV3: string = JSON.stringify(productSchemaObjectV3);
