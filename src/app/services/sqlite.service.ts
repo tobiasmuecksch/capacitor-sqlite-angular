@@ -3,7 +3,7 @@ import { CapacitorSQLite } from '@capacitor-community/sqlite';
 import { productSchemaJson } from '../sqldata/product.sql';
 import { SqliteOfficialService } from './sqlite-official.service';
 
-const DB_VERSION = 5;
+const DB_VERSION = 1;
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +29,8 @@ export class SqliteService {
       const jsonIsValid = await this.sqlite.isJsonValid(productSchemaJson);
 
       if (jsonIsValid) {
-        await this.sqlite.importFromJson(productSchemaJson);
+        const changes = await this.sqlite.importFromJson(productSchemaJson);
+        console.log('JSON IMPORT CHANGES', changes);
       }
     } catch (err) {
       console.error(`initDB: ${err}`);
