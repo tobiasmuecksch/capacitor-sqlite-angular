@@ -1,6 +1,6 @@
 export const productSchemaObject = {
   "database": "product-db",
-  "version": 7,
+  "version": 1,
   "encrypted": false,
   "mode": "full",
   "tables": [

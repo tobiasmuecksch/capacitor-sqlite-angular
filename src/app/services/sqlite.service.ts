@@ -3,7 +3,7 @@ import { CapacitorSQLite } from '@capacitor-community/sqlite';
 import { productSchemaJson } from '../sqldata/product.sql';
 import { SqliteOfficialService } from './sqlite-official.service';
 
-const DB_VERSION = 1;
+const DB_VERSION = 7;
 
 @Injectable({
   providedIn: 'root'

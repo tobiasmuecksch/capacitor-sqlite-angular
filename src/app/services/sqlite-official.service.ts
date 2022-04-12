@@ -407,7 +407,9 @@ export class SqliteOfficialService {
   async dropDatabase(databaseName: string): Promise<void> {
     await this.ready('deleteDatabase');
 
-    return CapacitorSQLite.deleteDatabase({ database: databaseName });
+    const dbConnection = await this.openDB(databaseName);
+
+    await dbConnection.delete();
   }
 
   private ensureNative() {
