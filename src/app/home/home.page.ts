@@ -36,4 +36,12 @@ export class HomePage {
   dropDatabase() {
     this.sqlite.dropDatabase();
   }
+
+  testRegularTableCreation() {
+    this.sqlite.testRegularTableCreation();
+  }
+
+  printRegularCreatedTableQuery() {
+    this.sqlite.printRegularCreatedTableQuery();
+  }
 }

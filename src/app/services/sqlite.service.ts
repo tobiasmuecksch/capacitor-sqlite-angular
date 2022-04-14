@@ -98,6 +98,33 @@ export class SqliteService {
 
     console.log('DATABASE DROPPED');
   }
+
+  async testRegularTableCreation() {
+    console.log('testRegularTableCreation');
+    const dbConnection = await this.sqlite.openDB('test-db', DB_VERSION);
+    console.log('TEST-DB CONNECTION', dbConnection);
+
+    const query = `
+    CREATE TABLE IF NOT EXISTS test (
+      id INTEGER PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL
+    );
+    `
+    const res = await dbConnection.execute(query);
+    console.log('RES', res);
+    if (res.changes && res.changes.changes && res.changes.changes < 0) {
+      throw new Error(`Error: execute failed`);
+    }
+  }
+
+  async printRegularCreatedTableQuery() {
+    const dbConnection = await this.sqlite.openDB('test-db');
+
+    const statement = 'SELECT * FROM test;';
+    const values = [];
+    const result = await dbConnection.query(statement, values);
+    console.log('result', result.values);
+  }
 }
 
 
