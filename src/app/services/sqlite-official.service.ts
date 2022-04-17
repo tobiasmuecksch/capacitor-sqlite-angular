@@ -380,7 +380,8 @@ export class SqliteOfficialService {
    */
   async initWebStore(): Promise<void> {
     if (this.platform !== 'web') {
-      throw new Error(`not implemented for this platform: ${this.platform}`);
+      //throw new Error(`not implemented for this platform: ${this.platform}`);
+      return;
     }
 
     return this.sqliteConnection.initWebStore();
@@ -392,7 +393,8 @@ export class SqliteOfficialService {
    */
   async saveToStore(database: string): Promise<void> {
     if (this.platform !== 'web') {
-      return Promise.reject(new Error(`not implemented for this platform: ${this.platform}`));
+      //return Promise.reject(new Error(`not implemented for this platform: ${this.platform}`));
+      return;
     }
 
     return this.sqliteConnection.saveToStore(database);

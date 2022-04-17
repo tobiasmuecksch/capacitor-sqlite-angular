@@ -94,7 +94,7 @@ export class SqliteService {
   }
 
   async dropDatabase() {
-    await this.sqlite.dropDatabase('product-db');
+    await this.sqlite.dropDatabase('test-db');
 
     console.log('DATABASE DROPPED');
   }
@@ -106,7 +106,7 @@ export class SqliteService {
 
     const query = `
     CREATE TABLE IF NOT EXISTS test (
-      id INTEGER PRIMARY KEY NOT NULL,
+      id TEXT PRIMARY KEY NOT NULL,
       name TEXT NOT NULL
     );
     `
@@ -116,8 +116,21 @@ export class SqliteService {
       throw new Error(`Error: execute failed`);
     }
 
-    dbConnection.close();
+    await this.sqlite.saveToStore('test-db');
     console.log('TABLE LIST', await dbConnection.getTableList())
+  }
+
+  async addDataToTestDB() {
+    this.insertData('1f6eb88cc-cf0b-41bb-b55b-52e71269273b1', 'Bob');
+    this.insertData('2f6eb88cc-cf0b-41bb-b55b-52e71269273b2', 'Lina');
+    this.insertData('3f6eb88cc-cf0b-41bb-b55b-52e71269273b3', 'Maria');
+  }
+
+  async insertData(id: string, name: string) {
+    const dbConnection = await this.sqlite.openDB('test-db');
+    const result = await dbConnection.run('REPLACE INTO test(id, name) VALUES(?,?)', [id, name]);
+    console.log('RESULT', result);
+    await this.sqlite.saveToStore('test-db');
   }
 
   async printRegularCreatedTableQuery() {

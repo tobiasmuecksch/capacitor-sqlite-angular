@@ -7,12 +7,13 @@
     "ng": "ng",
     "start": "npm run prepare && ng serve -o",
     "serve": "npm run start",
-    "build": "npm run prepare && ng build",
+    "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "prepare": "npm run copy:sqlite:wasm",
-    "copy:sqlite:wasm": "cp node_modules/sql.js/dist/sql-wasm.wasm src/assets/sql-wasm.wasm"
+    "copy:sqlite:wasm": "cp node_modules/sql.js/dist/sql-wasm.wasm src/assets/sql-wasm.wasm",
+    "electron:start": "rm -f src/assets/sql-wasm.wasm && npm run build &&  npx cap copy @capacitor-community/electron && cd electron && npm run electron:start"
   },
   "private": true,
   "dependencies": {
