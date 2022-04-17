@@ -101,7 +101,7 @@ export class SqliteService {
 
   async testRegularTableCreation() {
     console.log('testRegularTableCreation');
-    const dbConnection = await this.sqlite.openDB('test-db', DB_VERSION);
+    const dbConnection = await this.sqlite.openDB('test-db');
     console.log('TEST-DB CONNECTION', dbConnection);
 
     const query = `
@@ -115,10 +115,14 @@ export class SqliteService {
     if (res.changes && res.changes.changes && res.changes.changes < 0) {
       throw new Error(`Error: execute failed`);
     }
+
+    dbConnection.close();
+    console.log('TABLE LIST', await dbConnection.getTableList())
   }
 
   async printRegularCreatedTableQuery() {
     const dbConnection = await this.sqlite.openDB('test-db');
+    console.log('TABLE LIST', await dbConnection.getTableList())
 
     const statement = 'SELECT * FROM test;';
     const values = [];
