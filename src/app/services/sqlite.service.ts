@@ -3,7 +3,7 @@ import { CapacitorSQLite } from '@capacitor-community/sqlite';
 import { productSchemaJson } from '../sqldata/product.sql';
 import { SqliteOfficialService } from './sqlite-official.service';
 
-const DB_VERSION = 7;
+const DB_VERSION = 1;
 
 @Injectable({
   providedIn: 'root'
@@ -12,9 +12,7 @@ export class SqliteService {
 
   constructor(
     private sqlite: SqliteOfficialService
-  ) {
-    this.initProductsDatabase();
-  }
+  ) { }
 
   async initProductsDatabase() {
     try {
@@ -116,17 +114,18 @@ export class SqliteService {
       throw new Error(`Error: execute failed`);
     }
 
-    await this.sqlite.saveToStore('test-db');
-    console.log('TABLE LIST', await dbConnection.getTableList())
+    await dbConnection.close();
+    //console.log('TABLE LIST', await dbConnection.getTableList())
   }
 
   async addDataToTestDB() {
-    this.insertData('1f6eb88cc-cf0b-41bb-b55b-52e71269273b1', 'Bob');
-    this.insertData('2f6eb88cc-cf0b-41bb-b55b-52e71269273b2', 'Lina');
-    this.insertData('3f6eb88cc-cf0b-41bb-b55b-52e71269273b3', 'Maria');
+    await this.insertData('1f6eb88cc-cf0b-41bb-b55b-52e71269273b1', 'Bob');
+    await this.insertData('2f6eb88cc-cf0b-41bb-b55b-52e71269273b2', 'Lina');
+    await this.insertData('3f6eb88cc-cf0b-41bb-b55b-52e71269273b3', 'Maria');
   }
 
   async insertData(id: string, name: string) {
+    console.log('INSERTING DATA', id, name);
     const dbConnection = await this.sqlite.openDB('test-db');
     const result = await dbConnection.run('REPLACE INTO test(id, name) VALUES(?,?)', [id, name]);
     console.log('RESULT', result);

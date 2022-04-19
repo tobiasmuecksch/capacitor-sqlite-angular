@@ -74,6 +74,8 @@ export class SqliteOfficialService {
     }
     await dbConnection.open();
 
+    console.log('IS CONNECTION OPEN', (await dbConnection.isDBOpen()).result);
+
     return dbConnection;
   }
 

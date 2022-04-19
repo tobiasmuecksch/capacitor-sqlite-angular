@@ -10,7 +10,18 @@ export class HomePage {
 
   constructor(
     private sqlite: SqliteService
-  ) { }
+  ) {
+
+    this.init();
+
+  }
+
+  async init() {
+    console.log('CREATING TABLES');
+    await this.testRegularTableCreation();
+    console.log('ADDING DATA');
+    await this.addDataToTestDB();
+  }
 
   initDB() {
     console.log('INIT', this.sqlite);
