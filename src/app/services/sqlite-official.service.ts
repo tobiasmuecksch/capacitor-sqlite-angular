@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
-import { CapacitorSQLite, capSQLiteSet, Changes, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { CapacitorSQLite, Changes, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { Capacitor } from '@capacitor/core';
 import { Platform } from '@ionic/angular';
 import { BehaviorSubject } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import { SQLConnectionNotReadyError } from './errors/connection-not-ready-error';
+
+const READONLY: boolean = false;
 
 @Injectable({
   providedIn: 'root'
@@ -62,15 +64,15 @@ export class SqliteOfficialService {
 
     // connectionConsistency: mindestens eine Verbindung ist offen
     const connectionConsistency = (await this.sqliteConnection.checkConnectionsConsistency()).result;
-    const connectionToDatabaseAlreadyOpen = (await this.sqliteConnection.isConnection(databasename)).result;
+    const connectionToDatabaseAlreadyOpen = (await this.sqliteConnection.isConnection(databasename, READONLY)).result;
 
     let dbConnection: SQLiteDBConnection;
 
     if (connectionConsistency && connectionToDatabaseAlreadyOpen) {
-      dbConnection = await this.sqliteConnection.retrieveConnection(databasename);
+      dbConnection = await this.sqliteConnection.retrieveConnection(databasename, READONLY);
     } else {
       dbConnection = await this.sqliteConnection
-        .createConnection(databasename, false, 'no-encryption', version);
+        .createConnection(databasename, false, 'no-encryption', version, READONLY);
     }
     await dbConnection.open();
 
@@ -115,14 +117,12 @@ export class SqliteOfficialService {
    */
   async addUpgradeStatement(
     database: string,
-    fromVersion: number,
     toVersion: number,
-    statement: string,
-    set?: capSQLiteSet[]
+    statements: string[],
   )
     : Promise<void> {
     await this.ready('addUpgradeStatement');
-    return this.sqliteConnection.addUpgradeStatement(database, fromVersion, toVersion, statement, set ? set : []);
+    return this.sqliteConnection.addUpgradeStatement(database, toVersion, statements);
   }
 
   /**
@@ -213,7 +213,7 @@ export class SqliteOfficialService {
     mode: string, version: number
   ): Promise<SQLiteDBConnection> {
     await this.ready('createConnection');
-    const db: SQLiteDBConnection = await this.sqliteConnection.createConnection(database, encrypted, mode, version);
+    const db: SQLiteDBConnection = await this.sqliteConnection.createConnection(database, encrypted, mode, version, READONLY);
 
     if (db != null) {
       return db;
@@ -228,7 +228,7 @@ export class SqliteOfficialService {
    */
   async closeConnection(database: string): Promise<void> {
     await this.ready('closeConnection');
-    return this.sqliteConnection.closeConnection(database);
+    return this.sqliteConnection.closeConnection(database, READONLY);
   }
   /**
    * 
@@ -237,7 +237,7 @@ export class SqliteOfficialService {
    */
   async retrieveConnection(database: string): Promise<SQLiteDBConnection> {
     await this.ready('retrieveConnection');
-    return this.sqliteConnection.retrieveConnection(database);
+    return this.sqliteConnection.retrieveConnection(database, READONLY);
   }
 
   /**
@@ -268,7 +268,7 @@ export class SqliteOfficialService {
    */
   async isConnection(database: string): Promise<boolean> {
     await this.ready('isConnection');
-    const result = await this.sqliteConnection.isConnection(database);
+    const result = await this.sqliteConnection.isConnection(database, READONLY);
 
     return result.result;
   }

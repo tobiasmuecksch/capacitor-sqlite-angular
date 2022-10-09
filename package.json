@@ -13,7 +13,7 @@
     "e2e": "ng e2e",
     "prepare": "npm run copy:sqlite:wasm",
     "copy:sqlite:wasm": "cp node_modules/sql.js/dist/sql-wasm.wasm src/assets/sql-wasm.wasm",
-    "electron:start": "rm -f src/assets/sql-wasm.wasm && npm run build &&  npx cap copy @capacitor-community/electron && cd electron && npm run electron:start"
+    "electron:start": "rm -f src/assets/sql-wasm.wasm && npm run build &&  npx cap sync @capacitor-community/electron && cd electron && npm run electron:start"
   },
   "private": true,
   "dependencies": {
@@ -24,7 +24,7 @@
     "@angular/platform-browser-dynamic": "^14.2.5",
     "@angular/router": "^14.2.5",
     "@capacitor-community/electron": "^4.1.0",
-    "@capacitor-community/sqlite": "3.4.2",
+    "@capacitor-community/sqlite": "^4.2.0",
     "@capacitor/android": "^4.0.0",
     "@capacitor/app": "^4.0.0",
     "@capacitor/core": "^4.0.0",
