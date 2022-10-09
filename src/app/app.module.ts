@@ -8,12 +8,11 @@ import { SqliteOfficialService } from './services/sqlite-official.service';
 import { SqliteService } from './services/sqlite.service';
 
 @NgModule({
-  declarations: [AppComponent],
-  entryComponents: [],
-  imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule],
-  providers: [SqliteService,
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }, SqliteService, SqliteOfficialService],
-  bootstrap: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    declarations: [AppComponent],
+    imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule],
+    providers: [SqliteService,
+        { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }, SqliteService, SqliteOfficialService],
+    bootstrap: [AppComponent],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class AppModule { }
