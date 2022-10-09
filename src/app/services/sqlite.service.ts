@@ -93,6 +93,19 @@ export class SqliteService {
     await this.sqlite.addUpgradeStatement('product-db', 5, statements);
   }
 
+  async setPragmaWAL2() {
+    console.log('setting PRAGMA to WAL2');
+    const dbConnection = await this.sqlite.openDB('test-db');
+
+    const statement = `PRAGMA journal_mode=WAL2;`
+
+    const result = await dbConnection.execute(statement);
+
+    console.log('PRAGMA was set successfully', result);
+
+    return result;
+  }
+
   async dropDatabase() {
     await this.sqlite.dropDatabase('test-db');
 
@@ -121,6 +134,8 @@ export class SqliteService {
   }
 
   async addDataToTestDB() {
+    await this.setPragmaWAL2();
+
     this.insertData('1f6eb88cc-cf0b-41bb-b55b-52e71269273b1', 'Bob');
     this.insertData('2f6eb88cc-cf0b-41bb-b55b-52e71269273b2', 'Lina');
     this.insertData('3f6eb88cc-cf0b-41bb-b55b-52e71269273b3', 'Maria');
